@@ -18,6 +18,9 @@ export default function EditProjectPage() {
     const [location, setLocation] = useState('');
     const [status, setStatus] = useState<'active' | 'completed' | 'on_hold'>('active');
     const [contractAmount, setContractAmount] = useState(0);
+    const [budgetMaterialCost, setBudgetMaterialCost] = useState(0);
+    const [budgetConstructionCost, setBudgetConstructionCost] = useState(0);
+    const [budgetOtherCost, setBudgetOtherCost] = useState(0);
 
     useEffect(() => {
         if (project) {
@@ -26,6 +29,9 @@ export default function EditProjectPage() {
             setLocation(project.address || '');
             setStatus(project.status);
             setContractAmount(project.contractAmount || 0);
+            setBudgetMaterialCost(project.budgetMaterialCost || 0);
+            setBudgetConstructionCost(project.budgetConstructionCost || 0);
+            setBudgetOtherCost(project.budgetOtherCost || 0);
         }
     }, [project]);
 
@@ -50,6 +56,9 @@ export default function EditProjectPage() {
             address: location,
             status,
             contractAmount,
+            budgetMaterialCost,
+            budgetConstructionCost,
+            budgetOtherCost,
         });
         router.push('/projects');
     };
@@ -149,6 +158,68 @@ export default function EditProjectPage() {
                                     value={contractAmount}
                                     onChange={(e) => setContractAmount(Number(e.target.value))}
                                 />
+                            </div>
+                        </div>
+
+                        {/* 予算内訳 */}
+                        <div className="sm:col-span-6">
+                            <h3 className="text-sm font-semibold text-slate-700 border-b border-slate-200 pb-2">積算予算内訳（受注時）</h3>
+                        </div>
+
+                        <div className="sm:col-span-2">
+                            <label htmlFor="budgetMaterialCost" className="block text-sm font-medium leading-6 text-slate-900">
+                                積算材料費
+                            </label>
+                            <div className="mt-2">
+                                <input
+                                    type="number"
+                                    id="budgetMaterialCost"
+                                    className="block w-full rounded-md border-0 py-1.5 text-slate-900 shadow-sm ring-1 ring-inset ring-slate-300 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"
+                                    value={budgetMaterialCost}
+                                    onChange={(e) => setBudgetMaterialCost(Number(e.target.value))}
+                                />
+                            </div>
+                        </div>
+
+                        <div className="sm:col-span-2">
+                            <label htmlFor="budgetConstructionCost" className="block text-sm font-medium leading-6 text-slate-900">
+                                積算工事費
+                            </label>
+                            <div className="mt-2">
+                                <input
+                                    type="number"
+                                    id="budgetConstructionCost"
+                                    className="block w-full rounded-md border-0 py-1.5 text-slate-900 shadow-sm ring-1 ring-inset ring-slate-300 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"
+                                    value={budgetConstructionCost}
+                                    onChange={(e) => setBudgetConstructionCost(Number(e.target.value))}
+                                />
+                            </div>
+                        </div>
+
+                        <div className="sm:col-span-2">
+                            <label htmlFor="budgetOtherCost" className="block text-sm font-medium leading-6 text-slate-900">
+                                積算その他費
+                            </label>
+                            <div className="mt-2">
+                                <input
+                                    type="number"
+                                    id="budgetOtherCost"
+                                    className="block w-full rounded-md border-0 py-1.5 text-slate-900 shadow-sm ring-1 ring-inset ring-slate-300 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"
+                                    value={budgetOtherCost}
+                                    onChange={(e) => setBudgetOtherCost(Number(e.target.value))}
+                                />
+                            </div>
+                        </div>
+
+                        <div className="sm:col-span-6">
+                            <div className="rounded-md bg-slate-50 p-3 text-sm text-slate-600 flex gap-6">
+                                <span>積算合計: <strong>¥{(budgetMaterialCost + budgetConstructionCost + budgetOtherCost).toLocaleString()}</strong></span>
+                                <span>予想粗利: <strong className={(contractAmount - budgetMaterialCost - budgetConstructionCost - budgetOtherCost) >= 0 ? 'text-green-600' : 'text-red-600'}>
+                                    ¥{(contractAmount - budgetMaterialCost - budgetConstructionCost - budgetOtherCost).toLocaleString()}
+                                </strong></span>
+                                <span>予想粗利率: <strong className={(contractAmount - budgetMaterialCost - budgetConstructionCost - budgetOtherCost) >= 0 ? 'text-green-600' : 'text-red-600'}>
+                                    {contractAmount > 0 ? (((contractAmount - budgetMaterialCost - budgetConstructionCost - budgetOtherCost) / contractAmount) * 100).toFixed(1) : 0}%
+                                </strong></span>
                             </div>
                         </div>
                     </div>

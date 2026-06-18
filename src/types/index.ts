@@ -58,12 +58,21 @@ export type Project = {
   address?: string;
   manager?: string;
   contractAmount?: number;
+  budgetMaterialCost?: number;    // 積算材料費
+  budgetConstructionCost?: number; // 積算工事費
+  budgetOtherCost?: number;       // 積算その他費
 };
 
 export type MonthlyBudget = {
   id: string;
   projectId: string;
   yearMonth: string;
+  // 計画（積算）
+  plannedMaterialCost?: number;
+  plannedConstructionCost?: number;
+  plannedOtherCost?: number;
+  plannedBillingAmount?: number;
+  // 実績
   materialCost: number;
   constructionCost: number;
   otherCost: number;

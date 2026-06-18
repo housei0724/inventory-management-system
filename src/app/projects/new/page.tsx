@@ -17,13 +17,17 @@ export default function NewProjectPage() {
         manager: '',
         status: 'active' as 'active' | 'completed' | 'on_hold',
         contractAmount: 0,
+        budgetMaterialCost: 0,
+        budgetConstructionCost: 0,
+        budgetOtherCost: 0,
     });
 
+    const numberFields = ['contractAmount', 'budgetMaterialCost', 'budgetConstructionCost', 'budgetOtherCost'];
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
         const { name, value } = e.target;
         setFormData((prev) => ({
             ...prev,
-            [name]: name === 'contractAmount' ? Number(value) : value,
+            [name]: numberFields.includes(name) ? Number(value) : value,
         }));
     };
 
@@ -143,6 +147,71 @@ export default function NewProjectPage() {
                                 value={formData.contractAmount}
                                 onChange={handleChange}
                             />
+                        </div>
+                    </div>
+
+                    {/* 予算内訳 */}
+                    <div className="sm:col-span-6">
+                        <h3 className="text-sm font-semibold text-slate-700 border-b border-slate-200 pb-2">積算予算内訳（受注時）</h3>
+                    </div>
+
+                    <div className="sm:col-span-2">
+                        <label htmlFor="budgetMaterialCost" className="block text-sm font-medium leading-6 text-slate-900">
+                            積算材料費
+                        </label>
+                        <div className="mt-2">
+                            <input
+                                type="number"
+                                name="budgetMaterialCost"
+                                id="budgetMaterialCost"
+                                className="block w-full rounded-md border-0 py-1.5 text-slate-900 shadow-sm ring-1 ring-inset ring-slate-300 placeholder:text-slate-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"
+                                value={formData.budgetMaterialCost}
+                                onChange={handleChange}
+                            />
+                        </div>
+                    </div>
+
+                    <div className="sm:col-span-2">
+                        <label htmlFor="budgetConstructionCost" className="block text-sm font-medium leading-6 text-slate-900">
+                            積算工事費
+                        </label>
+                        <div className="mt-2">
+                            <input
+                                type="number"
+                                name="budgetConstructionCost"
+                                id="budgetConstructionCost"
+                                className="block w-full rounded-md border-0 py-1.5 text-slate-900 shadow-sm ring-1 ring-inset ring-slate-300 placeholder:text-slate-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"
+                                value={formData.budgetConstructionCost}
+                                onChange={handleChange}
+                            />
+                        </div>
+                    </div>
+
+                    <div className="sm:col-span-2">
+                        <label htmlFor="budgetOtherCost" className="block text-sm font-medium leading-6 text-slate-900">
+                            積算その他費
+                        </label>
+                        <div className="mt-2">
+                            <input
+                                type="number"
+                                name="budgetOtherCost"
+                                id="budgetOtherCost"
+                                className="block w-full rounded-md border-0 py-1.5 text-slate-900 shadow-sm ring-1 ring-inset ring-slate-300 placeholder:text-slate-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"
+                                value={formData.budgetOtherCost}
+                                onChange={handleChange}
+                            />
+                        </div>
+                    </div>
+
+                    <div className="sm:col-span-6">
+                        <div className="rounded-md bg-slate-50 p-3 text-sm text-slate-600 flex gap-6">
+                            <span>積算合計: <strong>¥{(formData.budgetMaterialCost + formData.budgetConstructionCost + formData.budgetOtherCost).toLocaleString()}</strong></span>
+                            <span>予想粗利: <strong className={(formData.contractAmount - formData.budgetMaterialCost - formData.budgetConstructionCost - formData.budgetOtherCost) >= 0 ? 'text-green-600' : 'text-red-600'}>
+                                ¥{(formData.contractAmount - formData.budgetMaterialCost - formData.budgetConstructionCost - formData.budgetOtherCost).toLocaleString()}
+                            </strong></span>
+                            <span>予想粗利率: <strong className={(formData.contractAmount - formData.budgetMaterialCost - formData.budgetConstructionCost - formData.budgetOtherCost) >= 0 ? 'text-green-600' : 'text-red-600'}>
+                                {formData.contractAmount > 0 ? (((formData.contractAmount - formData.budgetMaterialCost - formData.budgetConstructionCost - formData.budgetOtherCost) / formData.contractAmount) * 100).toFixed(1) : 0}%
+                            </strong></span>
                         </div>
                     </div>
                 </div>
