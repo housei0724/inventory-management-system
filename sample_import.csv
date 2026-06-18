@@ -1,0 +1,4 @@
+name,sku,category,quantity,unit,minStockLevel,location
+Imported Item 1,IMP-001,Electronics,100,pcs,10,Warehouse A
+Imported Item 2,IMP-002,Office Supplies,500,box,50,Warehouse B
+Imported Item 3,IMP-003,Furniture,20,pcs,5,Warehouse C
