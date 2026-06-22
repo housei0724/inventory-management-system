@@ -67,12 +67,6 @@ export type MonthlyBudget = {
   id: string;
   projectId: string;
   yearMonth: string;
-  // 計画（積算）
-  plannedMaterialCost?: number;
-  plannedConstructionCost?: number;
-  plannedOtherCost?: number;
-  plannedBillingAmount?: number;
-  // 実績
   materialCost: number;
   constructionCost: number;
   otherCost: number;

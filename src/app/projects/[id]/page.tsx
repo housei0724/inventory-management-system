@@ -7,32 +7,6 @@ import Link from 'next/link';
 import { useState } from 'react';
 import { MonthlyBudget } from '@/types';
 
-type BudgetFormData = {
-    yearMonth: string;
-    plannedMaterialCost: number;
-    plannedConstructionCost: number;
-    plannedOtherCost: number;
-    plannedBillingAmount: number;
-    materialCost: number;
-    constructionCost: number;
-    otherCost: number;
-    billingAmount: number;
-    notes: string;
-};
-
-const emptyForm = (): BudgetFormData => ({
-    yearMonth: new Date().toISOString().slice(0, 7),
-    plannedMaterialCost: 0,
-    plannedConstructionCost: 0,
-    plannedOtherCost: 0,
-    plannedBillingAmount: 0,
-    materialCost: 0,
-    constructionCost: 0,
-    otherCost: 0,
-    billingAmount: 0,
-    notes: '',
-});
-
 function DiffCell({ planned, actual }: { planned: number; actual: number }) {
     const diff = actual - planned;
     if (planned === 0 && actual === 0) return <span className="text-slate-300">-</span>;
@@ -40,17 +14,6 @@ function DiffCell({ planned, actual }: { planned: number; actual: number }) {
         <span className={diff > 0 ? 'text-red-600' : diff < 0 ? 'text-green-600' : 'text-slate-500'}>
             {diff > 0 ? '+' : ''}{diff.toLocaleString()}
         </span>
-    );
-}
-
-function NumberInput({ value, onChange }: { value: number; onChange: (v: number) => void }) {
-    return (
-        <input
-            type="number"
-            className="block w-24 rounded-md border-0 py-1 text-right text-slate-900 shadow-sm ring-1 ring-inset ring-slate-300 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm"
-            value={value}
-            onChange={(e) => onChange(Number(e.target.value))}
-        />
     );
 }
 
@@ -71,9 +34,16 @@ export default function ProjectDetailPage() {
     });
 
     const [isEditingBudget, setIsEditingBudget] = useState<string | null>(null);
-    const [editForm, setEditForm] = useState<BudgetFormData>(emptyForm());
+    const [editForm, setEditForm] = useState<Partial<MonthlyBudget>>({});
     const [isAddingBudget, setIsAddingBudget] = useState(false);
-    const [newBudget, setNewBudget] = useState<BudgetFormData>(emptyForm());
+    const [newBudget, setNewBudget] = useState<Partial<MonthlyBudget>>({
+        yearMonth: new Date().toISOString().slice(0, 7),
+        materialCost: 0,
+        constructionCost: 0,
+        otherCost: 0,
+        billingAmount: 0,
+        notes: '',
+    });
 
     if (!project) {
         return (
@@ -112,43 +82,42 @@ export default function ProjectDetailPage() {
     const actualProfit = actualBillingTotal - actualTotal;
     const actualProfitRate = actualBillingTotal > 0 ? (actualProfit / actualBillingTotal) * 100 : null;
 
-    // 月次計画合計
-    const plannedMaterialTotal = projectBudgets.reduce((sum, b) => sum + (b.plannedMaterialCost || 0), 0);
-    const plannedConstructionTotal = projectBudgets.reduce((sum, b) => sum + (b.plannedConstructionCost || 0), 0);
-    const plannedOtherTotal = projectBudgets.reduce((sum, b) => sum + (b.plannedOtherCost || 0), 0);
-    const plannedTotal = plannedMaterialTotal + plannedConstructionTotal + plannedOtherTotal;
-    const plannedBillingTotal = projectBudgets.reduce((sum, b) => sum + (b.plannedBillingAmount || 0), 0);
+    // 月次合計
+    const totalMaterialCost = actualMaterialTotal;
+    const totalConstructionCost = actualConstructionTotal;
+    const totalOtherCost = actualOtherTotal;
+    const totalSpent = actualTotal;
+    const totalBilling = actualBillingTotal;
 
     const handleAddBudget = async () => {
         if (!newBudget.yearMonth) return;
         await addMonthlyBudget({
             projectId: project.id,
-            yearMonth: newBudget.yearMonth,
-            plannedMaterialCost: newBudget.plannedMaterialCost,
-            plannedConstructionCost: newBudget.plannedConstructionCost,
-            plannedOtherCost: newBudget.plannedOtherCost,
-            plannedBillingAmount: newBudget.plannedBillingAmount,
-            materialCost: newBudget.materialCost,
-            constructionCost: newBudget.constructionCost,
-            otherCost: newBudget.otherCost,
-            billingAmount: newBudget.billingAmount,
-            notes: newBudget.notes,
+            yearMonth: newBudget.yearMonth!,
+            materialCost: Number(newBudget.materialCost) || 0,
+            constructionCost: Number(newBudget.constructionCost) || 0,
+            otherCost: Number(newBudget.otherCost) || 0,
+            billingAmount: Number(newBudget.billingAmount) || 0,
+            notes: newBudget.notes || '',
         });
         setIsAddingBudget(false);
-        setNewBudget(emptyForm());
+        setNewBudget({
+            yearMonth: new Date().toISOString().slice(0, 7),
+            materialCost: 0,
+            constructionCost: 0,
+            otherCost: 0,
+            billingAmount: 0,
+            notes: '',
+        });
     };
 
     const handleUpdateBudget = async (id: string) => {
         await updateMonthlyBudget(id, {
             yearMonth: editForm.yearMonth,
-            plannedMaterialCost: editForm.plannedMaterialCost,
-            plannedConstructionCost: editForm.plannedConstructionCost,
-            plannedOtherCost: editForm.plannedOtherCost,
-            plannedBillingAmount: editForm.plannedBillingAmount,
-            materialCost: editForm.materialCost,
-            constructionCost: editForm.constructionCost,
-            otherCost: editForm.otherCost,
-            billingAmount: editForm.billingAmount,
+            materialCost: Number(editForm.materialCost) || 0,
+            constructionCost: Number(editForm.constructionCost) || 0,
+            otherCost: Number(editForm.otherCost) || 0,
+            billingAmount: Number(editForm.billingAmount) || 0,
             notes: editForm.notes,
         });
         setIsEditingBudget(null);
@@ -162,18 +131,7 @@ export default function ProjectDetailPage() {
 
     const startEdit = (budget: MonthlyBudget) => {
         setIsEditingBudget(budget.id);
-        setEditForm({
-            yearMonth: budget.yearMonth,
-            plannedMaterialCost: budget.plannedMaterialCost || 0,
-            plannedConstructionCost: budget.plannedConstructionCost || 0,
-            plannedOtherCost: budget.plannedOtherCost || 0,
-            plannedBillingAmount: budget.plannedBillingAmount || 0,
-            materialCost: budget.materialCost || 0,
-            constructionCost: budget.constructionCost || 0,
-            otherCost: budget.otherCost || 0,
-            billingAmount: budget.billingAmount || 0,
-            notes: budget.notes || '',
-        });
+        setEditForm({ ...budget });
     };
 
     return (
@@ -239,9 +197,9 @@ export default function ProjectDetailPage() {
                                 <td className="px-4 py-2 text-right"><DiffCell planned={budgetTotal} actual={actualTotal} /></td>
                             </tr>
                             <tr>
-                                <td className="px-4 py-2 text-slate-600">受注金額</td>
+                                <td className="px-4 py-2 text-slate-600">受注金額 / 請求済</td>
                                 <td className="px-4 py-2 text-right text-slate-700 font-medium">¥{contractAmount.toLocaleString()}</td>
-                                <td className="px-4 py-2 text-right text-slate-500">¥{actualBillingTotal.toLocaleString()}<span className="text-xs ml-1 text-slate-400">(請求済)</span></td>
+                                <td className="px-4 py-2 text-right text-slate-500">¥{actualBillingTotal.toLocaleString()}</td>
                                 <td className="px-4 py-2"></td>
                             </tr>
                             <tr className="font-bold bg-indigo-50">
@@ -256,7 +214,7 @@ export default function ProjectDetailPage() {
                                     <span className={actualProfit >= 0 ? 'text-green-600' : 'text-red-600'}>
                                         ¥{actualProfit.toLocaleString()}
                                         {actualProfitRate !== null && (
-                                            <span className="ml-1 text-xs flex items-center justify-end gap-0.5">
+                                            <span className="ml-1 text-xs inline-flex items-center gap-0.5">
                                                 {actualProfitRate >= 0 ? <TrendingUp className="h-3 w-3" /> : <TrendingDown className="h-3 w-3" />}
                                                 {actualProfitRate.toFixed(1)}%
                                             </span>
@@ -270,85 +228,79 @@ export default function ProjectDetailPage() {
                 </div>
             </div>
 
-            {/* 月次計画 vs 実績テーブル */}
+            {/* 月次実績テーブル */}
             <div className="overflow-hidden rounded-lg bg-white shadow">
-                <div className="border-b border-slate-200 bg-white px-4 py-4 sm:px-6 flex justify-between items-center">
-                    <h3 className="text-base font-semibold leading-6 text-slate-900">月次管理（計画 vs 実績）</h3>
+                <div className="border-b border-slate-200 bg-white px-4 py-5 sm:px-6 flex justify-between items-center">
+                    <h3 className="text-base font-semibold leading-6 text-slate-900">月次実績管理</h3>
                     {!isAddingBudget && (
                         <button
                             onClick={() => setIsAddingBudget(true)}
                             className="inline-flex items-center rounded-md bg-indigo-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500"
                         >
-                            <Plus className="-ml-0.5 mr-1.5 h-5 w-5" />
+                            <Plus className="-ml-0.5 mr-1.5 h-5 w-5" aria-hidden="true" />
                             月次データ追加
                         </button>
                     )}
                 </div>
                 <div className="overflow-x-auto">
-                    <table className="min-w-full divide-y divide-slate-200 text-sm">
+                    <table className="min-w-full divide-y divide-slate-200">
                         <thead className="bg-slate-50">
                             <tr>
-                                <th rowSpan={2} className="px-3 py-3 text-left text-xs font-semibold text-slate-700 border-r border-slate-200">年月</th>
-                                <th colSpan={3} className="px-3 py-2 text-center text-xs font-semibold text-indigo-600 border-r border-slate-200 bg-indigo-50">材料費</th>
-                                <th colSpan={3} className="px-3 py-2 text-center text-xs font-semibold text-indigo-600 border-r border-slate-200 bg-indigo-50">工事費</th>
-                                <th colSpan={3} className="px-3 py-2 text-center text-xs font-semibold text-indigo-600 border-r border-slate-200 bg-indigo-50">その他費</th>
-                                <th colSpan={3} className="px-3 py-2 text-center text-xs font-semibold text-slate-700 border-r border-slate-200">支出計</th>
-                                <th colSpan={2} className="px-3 py-2 text-center text-xs font-semibold text-slate-700 border-r border-slate-200">請求額</th>
-                                <th rowSpan={2} className="px-3 py-2 text-center text-xs font-semibold text-slate-700 border-r border-slate-200">利益率</th>
-                                <th rowSpan={2} className="px-3 py-2 text-left text-xs font-semibold text-slate-700 border-r border-slate-200">備考</th>
-                                <th rowSpan={2} className="px-3 py-2"></th>
-                            </tr>
-                            <tr>
-                                <th className="px-2 py-1.5 text-center text-xs text-indigo-500 bg-indigo-50">計画</th>
-                                <th className="px-2 py-1.5 text-center text-xs text-orange-500 bg-indigo-50">実績</th>
-                                <th className="px-2 py-1.5 text-center text-xs text-slate-500 bg-indigo-50 border-r border-slate-200">差異</th>
-                                <th className="px-2 py-1.5 text-center text-xs text-indigo-500 bg-indigo-50">計画</th>
-                                <th className="px-2 py-1.5 text-center text-xs text-orange-500 bg-indigo-50">実績</th>
-                                <th className="px-2 py-1.5 text-center text-xs text-slate-500 bg-indigo-50 border-r border-slate-200">差異</th>
-                                <th className="px-2 py-1.5 text-center text-xs text-indigo-500 bg-indigo-50">計画</th>
-                                <th className="px-2 py-1.5 text-center text-xs text-orange-500 bg-indigo-50">実績</th>
-                                <th className="px-2 py-1.5 text-center text-xs text-slate-500 bg-indigo-50 border-r border-slate-200">差異</th>
-                                <th className="px-2 py-1.5 text-center text-xs text-indigo-500">計画</th>
-                                <th className="px-2 py-1.5 text-center text-xs text-orange-500">実績</th>
-                                <th className="px-2 py-1.5 text-center text-xs text-slate-500 border-r border-slate-200">差異</th>
-                                <th className="px-2 py-1.5 text-center text-xs text-indigo-500">計画</th>
-                                <th className="px-2 py-1.5 text-center text-xs text-orange-500 border-r border-slate-200">実績</th>
+                                <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-slate-900">年月</th>
+                                <th scope="col" className="px-3 py-3.5 text-right text-sm font-semibold text-slate-900">材料費</th>
+                                <th scope="col" className="px-3 py-3.5 text-right text-sm font-semibold text-slate-900">工事費</th>
+                                <th scope="col" className="px-3 py-3.5 text-right text-sm font-semibold text-slate-900">その他経費</th>
+                                <th scope="col" className="px-3 py-3.5 text-right text-sm font-semibold text-slate-900">支出計</th>
+                                <th scope="col" className="px-3 py-3.5 text-right text-sm font-semibold text-slate-900">請求金額</th>
+                                <th scope="col" className="px-3 py-3.5 text-right text-sm font-semibold text-slate-900">利益率</th>
+                                <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-slate-900">備考</th>
+                                <th scope="col" className="relative py-3.5 pl-3 pr-4 sm:pr-6">
+                                    <span className="sr-only">Actions</span>
+                                </th>
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-slate-200 bg-white">
                             {/* 新規追加行 */}
                             {isAddingBudget && (
                                 <tr className="bg-indigo-50">
-                                    <td className="px-2 py-3 border-r border-slate-200">
-                                        <input type="month" className="block w-28 rounded border-0 py-1 text-slate-900 shadow-sm ring-1 ring-inset ring-slate-300 text-xs" value={newBudget.yearMonth} onChange={e => setNewBudget({ ...newBudget, yearMonth: e.target.value })} />
+                                    <td className="whitespace-nowrap px-3 py-4 text-sm">
+                                        <input
+                                            type="month"
+                                            className="block w-full rounded-md border-0 py-1.5 text-slate-900 shadow-sm ring-1 ring-inset ring-slate-300 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"
+                                            value={newBudget.yearMonth}
+                                            onChange={(e) => setNewBudget({ ...newBudget, yearMonth: e.target.value })}
+                                        />
                                     </td>
-                                    <td className="px-1 py-3"><NumberInput value={newBudget.plannedMaterialCost} onChange={v => setNewBudget({ ...newBudget, plannedMaterialCost: v })} /></td>
-                                    <td className="px-1 py-3"><NumberInput value={newBudget.materialCost} onChange={v => setNewBudget({ ...newBudget, materialCost: v })} /></td>
-                                    <td className="px-2 py-3 text-right border-r border-slate-200"><DiffCell planned={newBudget.plannedMaterialCost} actual={newBudget.materialCost} /></td>
-                                    <td className="px-1 py-3"><NumberInput value={newBudget.plannedConstructionCost} onChange={v => setNewBudget({ ...newBudget, plannedConstructionCost: v })} /></td>
-                                    <td className="px-1 py-3"><NumberInput value={newBudget.constructionCost} onChange={v => setNewBudget({ ...newBudget, constructionCost: v })} /></td>
-                                    <td className="px-2 py-3 text-right border-r border-slate-200"><DiffCell planned={newBudget.plannedConstructionCost} actual={newBudget.constructionCost} /></td>
-                                    <td className="px-1 py-3"><NumberInput value={newBudget.plannedOtherCost} onChange={v => setNewBudget({ ...newBudget, plannedOtherCost: v })} /></td>
-                                    <td className="px-1 py-3"><NumberInput value={newBudget.otherCost} onChange={v => setNewBudget({ ...newBudget, otherCost: v })} /></td>
-                                    <td className="px-2 py-3 text-right border-r border-slate-200"><DiffCell planned={newBudget.plannedOtherCost} actual={newBudget.otherCost} /></td>
-                                    <td className="px-2 py-3 text-right text-xs">
-                                        ¥{(newBudget.plannedMaterialCost + newBudget.plannedConstructionCost + newBudget.plannedOtherCost).toLocaleString()}
+                                    <td className="whitespace-nowrap px-3 py-4 text-sm text-right">
+                                        <input type="number" className="block w-full rounded-md border-0 py-1.5 text-right text-slate-900 shadow-sm ring-1 ring-inset ring-slate-300 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6" value={newBudget.materialCost} onChange={(e) => setNewBudget({ ...newBudget, materialCost: Number(e.target.value) })} />
                                     </td>
-                                    <td className="px-2 py-3 text-right text-xs">
-                                        ¥{(newBudget.materialCost + newBudget.constructionCost + newBudget.otherCost).toLocaleString()}
+                                    <td className="whitespace-nowrap px-3 py-4 text-sm text-right">
+                                        <input type="number" className="block w-full rounded-md border-0 py-1.5 text-right text-slate-900 shadow-sm ring-1 ring-inset ring-slate-300 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6" value={newBudget.constructionCost} onChange={(e) => setNewBudget({ ...newBudget, constructionCost: Number(e.target.value) })} />
                                     </td>
-                                    <td className="px-2 py-3 text-right border-r border-slate-200">
-                                        <DiffCell planned={newBudget.plannedMaterialCost + newBudget.plannedConstructionCost + newBudget.plannedOtherCost} actual={newBudget.materialCost + newBudget.constructionCost + newBudget.otherCost} />
+                                    <td className="whitespace-nowrap px-3 py-4 text-sm text-right">
+                                        <input type="number" className="block w-full rounded-md border-0 py-1.5 text-right text-slate-900 shadow-sm ring-1 ring-inset ring-slate-300 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6" value={newBudget.otherCost} onChange={(e) => setNewBudget({ ...newBudget, otherCost: Number(e.target.value) })} />
                                     </td>
-                                    <td className="px-1 py-3"><NumberInput value={newBudget.plannedBillingAmount} onChange={v => setNewBudget({ ...newBudget, plannedBillingAmount: v })} /></td>
-                                    <td className="px-1 py-3 border-r border-slate-200"><NumberInput value={newBudget.billingAmount} onChange={v => setNewBudget({ ...newBudget, billingAmount: v })} /></td>
-                                    <td className="px-2 py-3 text-center text-xs text-slate-400 border-r border-slate-200">-</td>
-                                    <td className="px-2 py-3">
-                                        <input type="text" className="block w-20 rounded border-0 py-1 text-slate-900 shadow-sm ring-1 ring-inset ring-slate-300 text-xs" value={newBudget.notes} onChange={e => setNewBudget({ ...newBudget, notes: e.target.value })} />
+                                    <td className="whitespace-nowrap px-3 py-4 text-sm text-right font-medium">
+                                        ¥{(Number(newBudget.materialCost || 0) + Number(newBudget.constructionCost || 0) + Number(newBudget.otherCost || 0)).toLocaleString()}
                                     </td>
-                                    <td className="px-2 py-3 whitespace-nowrap">
-                                        <button onClick={handleAddBudget} className="text-indigo-600 hover:text-indigo-900 text-xs mr-2 font-medium">保存</button>
-                                        <button onClick={() => setIsAddingBudget(false)} className="text-slate-500 hover:text-slate-700 text-xs">取消</button>
+                                    <td className="whitespace-nowrap px-3 py-4 text-sm text-right">
+                                        <input type="number" className="block w-full rounded-md border-0 py-1.5 text-right text-slate-900 shadow-sm ring-1 ring-inset ring-slate-300 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6" value={newBudget.billingAmount} onChange={(e) => setNewBudget({ ...newBudget, billingAmount: Number(e.target.value) })} />
+                                    </td>
+                                    <td className="whitespace-nowrap px-3 py-4 text-sm text-right font-medium">
+                                        {(() => {
+                                            const spent = Number(newBudget.materialCost || 0) + Number(newBudget.constructionCost || 0) + Number(newBudget.otherCost || 0);
+                                            const billing = Number(newBudget.billingAmount || 0);
+                                            if (billing === 0) return <span className="text-slate-400">-</span>;
+                                            const rate = ((billing - spent) / billing) * 100;
+                                            return <span className={rate >= 0 ? 'text-green-600' : 'text-red-600'}>{rate.toFixed(1)}%</span>;
+                                        })()}
+                                    </td>
+                                    <td className="whitespace-nowrap px-3 py-4 text-sm">
+                                        <input type="text" className="block w-full rounded-md border-0 py-1.5 text-slate-900 shadow-sm ring-1 ring-inset ring-slate-300 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6" value={newBudget.notes} onChange={(e) => setNewBudget({ ...newBudget, notes: e.target.value })} />
+                                    </td>
+                                    <td className="relative whitespace-nowrap py-4 pl-3 pr-4 text-right text-sm font-medium sm:pr-6">
+                                        <button onClick={handleAddBudget} className="text-indigo-600 hover:text-indigo-900 mr-2">保存</button>
+                                        <button onClick={() => setIsAddingBudget(false)} className="text-slate-600 hover:text-slate-900">取消</button>
                                     </td>
                                 </tr>
                             )}
@@ -357,23 +309,31 @@ export default function ProjectDetailPage() {
                             {allMonths.map((month) => {
                                 const budget = projectBudgets.find(b => b.yearMonth === month);
                                 const orderTotal = monthlyOrderTotals[month] || 0;
+                                const hasBudget = !!budget;
 
-                                if (!budget) {
-                                    // 発注データのみ
+                                if (!hasBudget) {
                                     return (
-                                        <tr key={`order-${month}`} className="text-xs">
-                                            <td className="px-3 py-3 text-slate-700 font-medium border-r border-slate-200">{month}</td>
-                                            <td className="px-2 py-3 text-right text-slate-300">-</td>
-                                            <td className="px-2 py-3 text-right text-orange-500">¥{orderTotal.toLocaleString()}<span className="text-xs text-slate-400 ml-0.5">(発注)</span></td>
-                                            <td className="px-2 py-3 border-r border-slate-200"></td>
-                                            <td colSpan={3} className="px-2 py-3 text-slate-300 text-center border-r border-slate-200">-</td>
-                                            <td colSpan={3} className="px-2 py-3 text-slate-300 text-center border-r border-slate-200">-</td>
-                                            <td colSpan={3} className="px-2 py-3 text-slate-300 text-center border-r border-slate-200">-</td>
-                                            <td colSpan={2} className="px-2 py-3 text-slate-300 text-center border-r border-slate-200">-</td>
-                                            <td className="px-2 py-3 text-slate-400 text-center border-r border-slate-200">-</td>
-                                            <td className="px-2 py-3 text-indigo-500 text-xs">発注データのみ</td>
-                                            <td className="px-2 py-3 whitespace-nowrap">
-                                                <button onClick={() => { setNewBudget({ ...emptyForm(), yearMonth: month }); setIsAddingBudget(true); }} className="text-indigo-600 hover:text-indigo-900">
+                                        <tr key={`order-only-${month}`}>
+                                            <td className="whitespace-nowrap px-3 py-4 text-sm text-slate-900">{month}</td>
+                                            <td className="whitespace-nowrap px-3 py-4 text-sm text-right text-slate-500">
+                                                <div className="flex flex-col items-end">
+                                                    <span>¥{orderTotal.toLocaleString()}</span>
+                                                    <span className="text-xs text-slate-400">(発注: ¥{orderTotal.toLocaleString()})</span>
+                                                </div>
+                                            </td>
+                                            <td className="whitespace-nowrap px-3 py-4 text-sm text-right text-slate-500">¥0</td>
+                                            <td className="whitespace-nowrap px-3 py-4 text-sm text-right text-slate-500">¥0</td>
+                                            <td className="whitespace-nowrap px-3 py-4 text-sm text-right font-medium text-slate-900">¥{orderTotal.toLocaleString()}</td>
+                                            <td className="whitespace-nowrap px-3 py-4 text-sm text-right text-slate-500">¥0</td>
+                                            <td className="whitespace-nowrap px-3 py-4 text-sm text-right text-slate-400">-</td>
+                                            <td className="whitespace-nowrap px-3 py-4 text-sm text-slate-500">
+                                                <span className="text-xs text-indigo-600">発注データのみ存在</span>
+                                            </td>
+                                            <td className="relative whitespace-nowrap py-4 pl-3 pr-4 text-right text-sm font-medium sm:pr-6">
+                                                <button
+                                                    onClick={() => { setNewBudget({ ...newBudget, yearMonth: month }); setIsAddingBudget(true); }}
+                                                    className="text-indigo-600 hover:text-indigo-900"
+                                                >
                                                     <Plus className="h-4 w-4" />
                                                 </button>
                                             </td>
@@ -384,115 +344,101 @@ export default function ProjectDetailPage() {
                                 const actualMat = (budget.materialCost || 0) + orderTotal;
                                 const actualCon = budget.constructionCost || 0;
                                 const actualOth = budget.otherCost || 0;
-                                const planMat = budget.plannedMaterialCost || 0;
-                                const planCon = budget.plannedConstructionCost || 0;
-                                const planOth = budget.plannedOtherCost || 0;
-                                const planTotal = planMat + planCon + planOth;
-                                const actualSpentTotal = actualMat + actualCon + actualOth;
+                                const spent = actualMat + actualCon + actualOth;
                                 const billing = budget.billingAmount || 0;
-                                const profitRate = billing > 0 ? ((billing - actualSpentTotal) / billing) * 100 : null;
-
-                                if (isEditingBudget === budget.id) {
-                                    const editActualMat = (editForm.materialCost || 0) + orderTotal;
-                                    return (
-                                        <tr key={budget.id} className="bg-amber-50 text-xs">
-                                            <td className="px-2 py-3 border-r border-slate-200">
-                                                <input type="month" className="block w-28 rounded border-0 py-1 text-slate-900 shadow-sm ring-1 ring-inset ring-slate-300 text-xs" value={editForm.yearMonth} onChange={e => setEditForm({ ...editForm, yearMonth: e.target.value })} />
-                                            </td>
-                                            <td className="px-1 py-3"><NumberInput value={editForm.plannedMaterialCost} onChange={v => setEditForm({ ...editForm, plannedMaterialCost: v })} /></td>
-                                            <td className="px-1 py-3">
-                                                <NumberInput value={editForm.materialCost} onChange={v => setEditForm({ ...editForm, materialCost: v })} />
-                                                {orderTotal > 0 && <div className="text-xs text-slate-400 mt-0.5">+発注¥{orderTotal.toLocaleString()}</div>}
-                                            </td>
-                                            <td className="px-2 py-3 text-right border-r border-slate-200"><DiffCell planned={editForm.plannedMaterialCost} actual={editActualMat} /></td>
-                                            <td className="px-1 py-3"><NumberInput value={editForm.plannedConstructionCost} onChange={v => setEditForm({ ...editForm, plannedConstructionCost: v })} /></td>
-                                            <td className="px-1 py-3"><NumberInput value={editForm.constructionCost} onChange={v => setEditForm({ ...editForm, constructionCost: v })} /></td>
-                                            <td className="px-2 py-3 text-right border-r border-slate-200"><DiffCell planned={editForm.plannedConstructionCost} actual={editForm.constructionCost} /></td>
-                                            <td className="px-1 py-3"><NumberInput value={editForm.plannedOtherCost} onChange={v => setEditForm({ ...editForm, plannedOtherCost: v })} /></td>
-                                            <td className="px-1 py-3"><NumberInput value={editForm.otherCost} onChange={v => setEditForm({ ...editForm, otherCost: v })} /></td>
-                                            <td className="px-2 py-3 text-right border-r border-slate-200"><DiffCell planned={editForm.plannedOtherCost} actual={editForm.otherCost} /></td>
-                                            <td className="px-2 py-3 text-right">¥{(editForm.plannedMaterialCost + editForm.plannedConstructionCost + editForm.plannedOtherCost).toLocaleString()}</td>
-                                            <td className="px-2 py-3 text-right">¥{(editActualMat + editForm.constructionCost + editForm.otherCost).toLocaleString()}</td>
-                                            <td className="px-2 py-3 text-right border-r border-slate-200"><DiffCell planned={editForm.plannedMaterialCost + editForm.plannedConstructionCost + editForm.plannedOtherCost} actual={editActualMat + editForm.constructionCost + editForm.otherCost} /></td>
-                                            <td className="px-1 py-3"><NumberInput value={editForm.plannedBillingAmount} onChange={v => setEditForm({ ...editForm, plannedBillingAmount: v })} /></td>
-                                            <td className="px-1 py-3 border-r border-slate-200"><NumberInput value={editForm.billingAmount} onChange={v => setEditForm({ ...editForm, billingAmount: v })} /></td>
-                                            <td className="px-2 py-3 text-center border-r border-slate-200 text-slate-400">-</td>
-                                            <td className="px-2 py-3">
-                                                <input type="text" className="block w-20 rounded border-0 py-1 text-slate-900 shadow-sm ring-1 ring-inset ring-slate-300 text-xs" value={editForm.notes} onChange={e => setEditForm({ ...editForm, notes: e.target.value })} />
-                                            </td>
-                                            <td className="px-2 py-3 whitespace-nowrap">
-                                                <button onClick={() => handleUpdateBudget(budget.id)} className="text-indigo-600 hover:text-indigo-900 text-xs mr-2 font-medium">保存</button>
-                                                <button onClick={() => setIsEditingBudget(null)} className="text-slate-500 hover:text-slate-700 text-xs">取消</button>
-                                            </td>
-                                        </tr>
-                                    );
-                                }
+                                const profitRate = billing > 0 ? ((billing - spent) / billing) * 100 : null;
 
                                 return (
-                                    <tr key={budget.id} className="hover:bg-slate-50 text-xs">
-                                        <td className="px-3 py-3 text-slate-700 font-medium border-r border-slate-200 whitespace-nowrap">{budget.yearMonth}</td>
-                                        <td className="px-2 py-3 text-right text-indigo-600">¥{planMat.toLocaleString()}</td>
-                                        <td className="px-2 py-3 text-right text-orange-500">
-                                            ¥{actualMat.toLocaleString()}
-                                            {orderTotal > 0 && <div className="text-slate-400">(発注含む)</div>}
-                                        </td>
-                                        <td className="px-2 py-3 text-right border-r border-slate-200"><DiffCell planned={planMat} actual={actualMat} /></td>
-                                        <td className="px-2 py-3 text-right text-indigo-600">¥{planCon.toLocaleString()}</td>
-                                        <td className="px-2 py-3 text-right text-orange-500">¥{actualCon.toLocaleString()}</td>
-                                        <td className="px-2 py-3 text-right border-r border-slate-200"><DiffCell planned={planCon} actual={actualCon} /></td>
-                                        <td className="px-2 py-3 text-right text-indigo-600">¥{planOth.toLocaleString()}</td>
-                                        <td className="px-2 py-3 text-right text-orange-500">¥{actualOth.toLocaleString()}</td>
-                                        <td className="px-2 py-3 text-right border-r border-slate-200"><DiffCell planned={planOth} actual={actualOth} /></td>
-                                        <td className="px-2 py-3 text-right text-indigo-600 font-medium">¥{planTotal.toLocaleString()}</td>
-                                        <td className="px-2 py-3 text-right text-orange-500 font-medium">¥{actualSpentTotal.toLocaleString()}</td>
-                                        <td className="px-2 py-3 text-right border-r border-slate-200 font-medium"><DiffCell planned={planTotal} actual={actualSpentTotal} /></td>
-                                        <td className="px-2 py-3 text-right text-indigo-600">¥{(budget.plannedBillingAmount || 0).toLocaleString()}</td>
-                                        <td className="px-2 py-3 text-right text-slate-700 border-r border-slate-200">¥{billing.toLocaleString()}</td>
-                                        <td className="px-2 py-3 text-center border-r border-slate-200 font-medium">
-                                            {profitRate === null ? <span className="text-slate-300">-</span> : (
-                                                <span className={profitRate >= 0 ? 'text-green-600' : 'text-red-600'}>{profitRate.toFixed(1)}%</span>
-                                            )}
-                                        </td>
-                                        <td className="px-2 py-3 text-slate-500 max-w-xs truncate">{budget.notes}</td>
-                                        <td className="px-2 py-3 whitespace-nowrap">
-                                            <button onClick={() => startEdit(budget)} className="text-indigo-600 hover:text-indigo-900 mr-2">
-                                                <Edit className="h-4 w-4" />
-                                            </button>
-                                            <button onClick={() => handleDeleteBudget(budget.id)} className="text-red-500 hover:text-red-700">
-                                                <Trash2 className="h-4 w-4" />
-                                            </button>
-                                        </td>
+                                    <tr key={budget.id}>
+                                        {isEditingBudget === budget.id ? (
+                                            <>
+                                                <td className="whitespace-nowrap px-3 py-4 text-sm">
+                                                    <input type="month" className="block w-full rounded-md border-0 py-1.5 text-slate-900 shadow-sm ring-1 ring-inset ring-slate-300 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6" value={editForm.yearMonth} onChange={(e) => setEditForm({ ...editForm, yearMonth: e.target.value })} />
+                                                </td>
+                                                <td className="whitespace-nowrap px-3 py-4 text-sm text-right">
+                                                    <div className="flex flex-col items-end gap-1">
+                                                        <input type="number" className="block w-full rounded-md border-0 py-1.5 text-right text-slate-900 shadow-sm ring-1 ring-inset ring-slate-300 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6" value={editForm.materialCost} onChange={(e) => setEditForm({ ...editForm, materialCost: Number(e.target.value) })} placeholder="手動入力分" />
+                                                        {orderTotal > 0 && <span className="text-xs text-slate-500">+ 発注: ¥{orderTotal.toLocaleString()}</span>}
+                                                    </div>
+                                                </td>
+                                                <td className="whitespace-nowrap px-3 py-4 text-sm text-right">
+                                                    <input type="number" className="block w-full rounded-md border-0 py-1.5 text-right text-slate-900 shadow-sm ring-1 ring-inset ring-slate-300 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6" value={editForm.constructionCost} onChange={(e) => setEditForm({ ...editForm, constructionCost: Number(e.target.value) })} />
+                                                </td>
+                                                <td className="whitespace-nowrap px-3 py-4 text-sm text-right">
+                                                    <input type="number" className="block w-full rounded-md border-0 py-1.5 text-right text-slate-900 shadow-sm ring-1 ring-inset ring-slate-300 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6" value={editForm.otherCost} onChange={(e) => setEditForm({ ...editForm, otherCost: Number(e.target.value) })} />
+                                                </td>
+                                                <td className="whitespace-nowrap px-3 py-4 text-sm text-right font-medium">
+                                                    ¥{(Number(editForm.materialCost || 0) + orderTotal + Number(editForm.constructionCost || 0) + Number(editForm.otherCost || 0)).toLocaleString()}
+                                                </td>
+                                                <td className="whitespace-nowrap px-3 py-4 text-sm text-right">
+                                                    <input type="number" className="block w-full rounded-md border-0 py-1.5 text-right text-slate-900 shadow-sm ring-1 ring-inset ring-slate-300 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6" value={editForm.billingAmount} onChange={(e) => setEditForm({ ...editForm, billingAmount: Number(e.target.value) })} />
+                                                </td>
+                                                <td className="whitespace-nowrap px-3 py-4 text-sm text-right font-medium">
+                                                    {(() => {
+                                                        const s = Number(editForm.materialCost || 0) + orderTotal + Number(editForm.constructionCost || 0) + Number(editForm.otherCost || 0);
+                                                        const b = Number(editForm.billingAmount || 0);
+                                                        if (b === 0) return <span className="text-slate-400">-</span>;
+                                                        const rate = ((b - s) / b) * 100;
+                                                        return <span className={rate >= 0 ? 'text-green-600' : 'text-red-600'}>{rate.toFixed(1)}%</span>;
+                                                    })()}
+                                                </td>
+                                                <td className="whitespace-nowrap px-3 py-4 text-sm">
+                                                    <input type="text" className="block w-full rounded-md border-0 py-1.5 text-slate-900 shadow-sm ring-1 ring-inset ring-slate-300 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6" value={editForm.notes} onChange={(e) => setEditForm({ ...editForm, notes: e.target.value })} />
+                                                </td>
+                                                <td className="relative whitespace-nowrap py-4 pl-3 pr-4 text-right text-sm font-medium sm:pr-6">
+                                                    <button onClick={() => handleUpdateBudget(budget.id)} className="text-indigo-600 hover:text-indigo-900 mr-2">保存</button>
+                                                    <button onClick={() => setIsEditingBudget(null)} className="text-slate-600 hover:text-slate-900">取消</button>
+                                                </td>
+                                            </>
+                                        ) : (
+                                            <>
+                                                <td className="whitespace-nowrap px-3 py-4 text-sm text-slate-900">{budget.yearMonth}</td>
+                                                <td className="whitespace-nowrap px-3 py-4 text-sm text-right text-slate-500">
+                                                    <div className="flex flex-col items-end">
+                                                        <span>¥{actualMat.toLocaleString()}</span>
+                                                        {orderTotal > 0 && <span className="text-xs text-slate-400">(手動: ¥{budget.materialCost.toLocaleString()} / 発注: ¥{orderTotal.toLocaleString()})</span>}
+                                                    </div>
+                                                </td>
+                                                <td className="whitespace-nowrap px-3 py-4 text-sm text-right text-slate-500">¥{actualCon.toLocaleString()}</td>
+                                                <td className="whitespace-nowrap px-3 py-4 text-sm text-right text-slate-500">¥{actualOth.toLocaleString()}</td>
+                                                <td className="whitespace-nowrap px-3 py-4 text-sm text-right font-medium text-slate-900">¥{spent.toLocaleString()}</td>
+                                                <td className="whitespace-nowrap px-3 py-4 text-sm text-right text-slate-500">¥{billing.toLocaleString()}</td>
+                                                <td className="whitespace-nowrap px-3 py-4 text-sm text-right font-medium">
+                                                    {profitRate === null ? <span className="text-slate-400">-</span> : (
+                                                        <span className={profitRate >= 0 ? 'text-green-600' : 'text-red-600'}>{profitRate.toFixed(1)}%</span>
+                                                    )}
+                                                </td>
+                                                <td className="whitespace-nowrap px-3 py-4 text-sm text-slate-500 max-w-xs truncate">{budget.notes}</td>
+                                                <td className="relative whitespace-nowrap py-4 pl-3 pr-4 text-right text-sm font-medium sm:pr-6">
+                                                    <button onClick={() => startEdit(budget)} className="text-indigo-600 hover:text-indigo-900 mr-2">
+                                                        <Edit className="h-4 w-4" />
+                                                    </button>
+                                                    <button onClick={() => handleDeleteBudget(budget.id)} className="text-red-600 hover:text-red-900">
+                                                        <Trash2 className="h-4 w-4" />
+                                                    </button>
+                                                </td>
+                                            </>
+                                        )}
                                     </tr>
                                 );
                             })}
 
                             {/* 合計行 */}
-                            {allMonths.length > 0 && (
-                                <tr className="bg-slate-100 font-bold text-xs">
-                                    <td className="px-3 py-3 text-slate-900 border-r border-slate-200">合計</td>
-                                    <td className="px-2 py-3 text-right text-indigo-600">¥{plannedMaterialTotal.toLocaleString()}</td>
-                                    <td className="px-2 py-3 text-right text-orange-500">¥{actualMaterialTotal.toLocaleString()}</td>
-                                    <td className="px-2 py-3 text-right border-r border-slate-200"><DiffCell planned={plannedMaterialTotal} actual={actualMaterialTotal} /></td>
-                                    <td className="px-2 py-3 text-right text-indigo-600">¥{plannedConstructionTotal.toLocaleString()}</td>
-                                    <td className="px-2 py-3 text-right text-orange-500">¥{actualConstructionTotal.toLocaleString()}</td>
-                                    <td className="px-2 py-3 text-right border-r border-slate-200"><DiffCell planned={plannedConstructionTotal} actual={actualConstructionTotal} /></td>
-                                    <td className="px-2 py-3 text-right text-indigo-600">¥{plannedOtherTotal.toLocaleString()}</td>
-                                    <td className="px-2 py-3 text-right text-orange-500">¥{actualOtherTotal.toLocaleString()}</td>
-                                    <td className="px-2 py-3 text-right border-r border-slate-200"><DiffCell planned={plannedOtherTotal} actual={actualOtherTotal} /></td>
-                                    <td className="px-2 py-3 text-right text-indigo-600">¥{plannedTotal.toLocaleString()}</td>
-                                    <td className="px-2 py-3 text-right text-orange-500">¥{actualTotal.toLocaleString()}</td>
-                                    <td className="px-2 py-3 text-right border-r border-slate-200"><DiffCell planned={plannedTotal} actual={actualTotal} /></td>
-                                    <td className="px-2 py-3 text-right text-indigo-600">¥{plannedBillingTotal.toLocaleString()}</td>
-                                    <td className="px-2 py-3 text-right text-slate-700 border-r border-slate-200">¥{actualBillingTotal.toLocaleString()}</td>
-                                    <td className="px-2 py-3 text-center border-r border-slate-200">
-                                        {actualProfitRate === null ? <span className="text-slate-400">-</span> : (
-                                            <span className={actualProfitRate >= 0 ? 'text-green-600' : 'text-red-600'}>{actualProfitRate.toFixed(1)}%</span>
-                                        )}
-                                    </td>
-                                    <td className="px-2 py-3"></td>
-                                    <td className="px-2 py-3"></td>
-                                </tr>
-                            )}
+                            <tr className="bg-slate-50 font-bold">
+                                <td className="whitespace-nowrap px-3 py-4 text-sm text-slate-900">合計</td>
+                                <td className="whitespace-nowrap px-3 py-4 text-sm text-right text-slate-900">¥{totalMaterialCost.toLocaleString()}</td>
+                                <td className="whitespace-nowrap px-3 py-4 text-sm text-right text-slate-900">¥{totalConstructionCost.toLocaleString()}</td>
+                                <td className="whitespace-nowrap px-3 py-4 text-sm text-right text-slate-900">¥{totalOtherCost.toLocaleString()}</td>
+                                <td className="whitespace-nowrap px-3 py-4 text-sm text-right text-slate-900">¥{totalSpent.toLocaleString()}</td>
+                                <td className="whitespace-nowrap px-3 py-4 text-sm text-right text-slate-900">¥{totalBilling.toLocaleString()}</td>
+                                <td className="whitespace-nowrap px-3 py-4 text-sm text-right font-bold">
+                                    {totalBilling === 0 ? <span className="text-slate-400">-</span> : (
+                                        <span className={actualProfitRate! >= 0 ? 'text-green-600' : 'text-red-600'}>{actualProfitRate!.toFixed(1)}%</span>
+                                    )}
+                                </td>
+                                <td className="whitespace-nowrap px-3 py-4 text-sm text-slate-500"></td>
+                                <td className="relative whitespace-nowrap py-4 pl-3 pr-4 text-right text-sm font-medium sm:pr-6"></td>
+                            </tr>
                         </tbody>
                     </table>
                     {allMonths.length === 0 && !isAddingBudget && (
