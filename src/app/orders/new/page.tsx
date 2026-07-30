@@ -288,7 +288,11 @@ function NewOrderContent() {
                 </div>
             )}
 
-            <form onSubmit={handleSubmit} className="space-y-8 divide-y divide-slate-200 rounded-lg bg-white p-6 shadow">
+            <form
+                onSubmit={handleSubmit}
+                onKeyDown={(e) => { if (e.key === 'Enter' && e.target instanceof HTMLElement && e.target.tagName !== 'TEXTAREA') e.preventDefault(); }}
+                className="space-y-8 divide-y divide-slate-200 rounded-lg bg-white p-6 shadow"
+            >
                 <div className="space-y-6">
                     <div className="grid grid-cols-1 gap-y-6 gap-x-4 sm:grid-cols-6 border-b pb-6">
                         <div className="sm:col-span-3">
