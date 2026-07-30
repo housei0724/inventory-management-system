@@ -145,6 +145,18 @@ function NewOrderContent() {
             }
         }
 
+        // 発注番号バリデーションを品目登録より前に行う（先に addItem が実行されると
+        // 番号エラー時に品目だけ登録されてしまうため）
+        if (!orderNumber.trim()) {
+            alert('発注番号を入力してください');
+            return;
+        }
+        const isDuplicate = orders.some(o => o.orderNumber === orderNumber.trim());
+        if (isDuplicate) {
+            alert('この発注番号はすでに使用されています。別の番号を入力してください。');
+            return;
+        }
+
         // Register new items first and get their IDs
         const finalOrderItems: { itemId: string; quantity: number; pricePerUnit?: number }[] = [];
 
@@ -205,18 +217,6 @@ function NewOrderContent() {
                     pricePerUnit: item.pricePerUnit
                 });
             }
-        }
-
-        if (!orderNumber.trim()) {
-            alert('発注番号を入力してください');
-            return;
-        }
-
-        // Check for duplicate order number
-        const isDuplicate = orders.some(o => o.orderNumber === orderNumber.trim());
-        if (isDuplicate) {
-            alert('この発注番号はすでに使用されています。別の番号を入力してください。');
-            return;
         }
 
         // Build order object, excluding undefined fields for Firestore

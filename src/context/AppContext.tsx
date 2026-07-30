@@ -207,10 +207,14 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     };
 
     const addOrder = async (order: Omit<Order, 'id'>): Promise<string> => {
-        const docRef = await addDoc(collection(db, 'orders'), {
+        const orderData = {
             ...order,
             createdAt: new Date().toISOString()
-        });
+        };
+        const docRef = await addDoc(collection(db, 'orders'), orderData);
+        // onSnapshot が非同期で反映される前にページ遷移すると新規発注が見つからないため
+        // 楽観的に即座にローカルステートへ追加する
+        setOrders(prev => [{ id: docRef.id, ...orderData } as Order, ...prev]);
         return docRef.id;
     };
 
