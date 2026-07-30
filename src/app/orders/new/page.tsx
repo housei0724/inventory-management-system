@@ -20,6 +20,17 @@ type OrderItemInput = {
     newItemUnit?: string;
 };
 
+// 4月1日基準の年度を返す（例: 2026年7月 → 2026、2026年1月 → 2025）
+function getFiscalYear(date: Date = new Date()): number {
+    return date.getMonth() >= 3 ? date.getFullYear() : date.getFullYear() - 1;
+}
+
+// 発注データから年度を取得（fiscalYear フィールドがない旧データは createdAt から算出）
+function getOrderFiscalYear(order: { fiscalYear?: number; createdAt: string }): number {
+    if (order.fiscalYear !== undefined) return order.fiscalYear;
+    return getFiscalYear(new Date(order.createdAt));
+}
+
 function NewOrderContent() {
     const router = useRouter();
     const searchParams = useSearchParams();
@@ -151,9 +162,14 @@ function NewOrderContent() {
             alert('発注番号を入力してください');
             return;
         }
-        const isDuplicate = orders.some(o => o.orderNumber === orderNumber.trim());
+        // 重複チェックは同一年度内のみ（4月1日基準）
+        const currentFiscalYear = getFiscalYear();
+        const isDuplicate = orders.some(o =>
+            o.orderNumber === orderNumber.trim() &&
+            getOrderFiscalYear(o) === currentFiscalYear
+        );
         if (isDuplicate) {
-            alert('この発注番号はすでに使用されています。別の番号を入力してください。');
+            alert(`この発注番号は${currentFiscalYear}年度にすでに使用されています。別の番号を入力してください。`);
             return;
         }
 
@@ -226,6 +242,7 @@ function NewOrderContent() {
             items: finalOrderItems,
             status: 'ordered' as const,
             createdAt: new Date().toISOString(),
+            fiscalYear: currentFiscalYear,
         };
 
         // Add optional fields only if they have values

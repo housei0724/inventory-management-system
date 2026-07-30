@@ -94,6 +94,7 @@ export type Order = {
   expectedDate?: string;
   issuer?: string;      // Person who created the order
   notes?: string;
+  fiscalYear?: number;  // 年度（4月1日基準）例: 2025 → 2025年4月〜2026年3月
 };
 
 export type EstimateItem = {
