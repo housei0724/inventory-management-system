@@ -38,7 +38,7 @@ function OrderDetailContent() {
                     <Link href="/orders" className="text-slate-500 hover:text-slate-700">
                         <ArrowLeft className="h-6 w-6" />
                     </Link>
-                    <h2 className="text-2xl font-bold text-slate-800">発注が見つかりません</h2>
+                    <h2 className="text-2xl font-bold text-slate-800">読み込み中...</h2>
                 </div>
             </div>
         );
